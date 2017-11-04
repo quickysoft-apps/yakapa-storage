@@ -15,6 +15,7 @@ const AGENT_TAG = 'f1a33ec7-b0a5-4b65-be40-d2a93fd5b133'
 const RESULT = `${EVENT_PREFIX}/result`
 const AUTHENTICATED = `${EVENT_PREFIX}/authenticated`
 
+
 class AgentClientEmitter extends EventEmitter {
   doConnected() {
     this.emit('connected')
@@ -110,10 +111,10 @@ export default class AgentClient {
   }
 
   socketError(error) {
-    console.info(Common.now(), 'Socket error', error)
+    console.error(Common.now(), 'Socket error', error)
     this._emitter.emit('socketError', error)
   }
-
+ 
   connectionError(error) {
     console.info(Common.now(), 'Erreur connexion', error)
     this._emitter.emit('connectionError', error)
