@@ -1,0 +1,30 @@
+{
+  "name": "yakapa-storage",
+  "version": "1.0.0",
+  "description": "Yakapa Storage System",
+  "main": "app.js",
+  "author": {
+    "name": "QuickySoft"
+  },
+  "scripts": {
+    "start": "node lib/app",
+    "rebuild": "node_modules/.bin/babel src --presets es2015 --plugins transform-async-to-generator --out-dir lib -w --source-maps"
+  },
+  "dependencies": {
+    "express": "^4.15.0",
+    "lokka": "^1.7.0",
+    "lokka-transport-http": "^1.6.1",
+    "request": "^2.81.0",
+    "socket.io-client": "^2.0.4",
+    "lz-string": "^1.4.4",
+    "events": "^1.1.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-async-to-generator": "^6.24.1",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-register": "^6.23.0",
+    "eslint": "^3.17.0"
+  }
+}
