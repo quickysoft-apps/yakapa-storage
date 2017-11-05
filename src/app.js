@@ -21,24 +21,29 @@ agentClient.emitter.on('result', (message, from) => {
 	const filename = path.join(__dirname, '..', '..', 'storage', `${from}.json`)
 	lock(filename, function(unlock) {		
 		try {
-			const data = {				
-				timestamp: new Date().toJSON(),
-				source: from,
-				...message
+			
+			const result = JSON.parse(message)
+			const newData = [
+				{				
+					timestamp: new Date().toJSON(),
+					...result
+				}
+			]
+			const incomingDataFrame = new dataForge.DataFrame(newData)			
+						
+			if (fs.existsSync(filename)) {
+				const existingData = new dataForge.readFileSync(filename).parseJSON().toArray()
+				const existingDataFrame = new dataForge.DataFrame(existingData)
+				const storingDataFrame = existingDataFrame.concat(incomingDataFrame)
+				storingDataFrame.asJSON().writeFileSync(filename);
+			} else {
+				incomingDataFrame.asJSON().writeFileSync(filename);
 			}
-			const existing = new dataForge.readFileSync(filename)
-			const incoming = new dataForge.DataFrame(data).setIndex("timestamp").dropSeries("timestamp")
-			console.log('incoming', incoming.asJSON())
-			let dataFrame = undefined
-			if (existing)	{
-				console.log('existing', existing.parseJSON())
-			}				
-			//dataFrame = existing ? existing.concat(incoming) : incoming			
-			incoming.asJSON().writeFileSync(filename);
-			console.info(Common.now(), 'Storage done for', filename)
+			
+			console.info(Common.now(), 'Result storage done for', from)
 		} 
 		catch(error) {			
-			console.warn(Common.now(), 'Storage failed for', filename, error)
+			console.warn(Common.now(), 'Result storage failed for', from, error)
 		}
 		finally {
 			unlock()
