@@ -1,24 +1,37 @@
 import 'babel-polyfill'
 import io from 'socket.io-client'
 import * as LZString from 'lz-string'
-import {
-  EventEmitter
-} from 'events'
+import { EventEmitter } from 'events'
 
 import Common from './common'
 
 const SOCKET_SERVER_URL = 'https://mprj.cloudapp.net'
 const DEFAULT_NICKNAME = 'Storage'
 
-const EVENT_PREFIX = 'yakapa'
 const AGENT_TAG = 'f1a33ec7-b0a5-4b65-be40-d2a93fd5b133'
+const EVENT_PREFIX = 'yakapa'
 const RESULT = `${EVENT_PREFIX}/result`
-const AUTHENTICATED = `${EVENT_PREFIX}/authenticated`
-
 
 class AgentClientEmitter extends EventEmitter {
-  doConnected() {
+  
+  connected() {
     this.emit('connected')
+  }
+  
+  socketError(error) {
+    this.emit('socketError', error)
+  }
+  
+  connectionError(error) {
+    this.emit('connectionError', error)
+  }
+  
+  pong(ms) {
+    this.emit('pong', ms)
+  }
+  
+  result(message, from) {
+    this.emit('result', message, from)
   }
 }
 
@@ -36,7 +49,7 @@ export default class AgentClient {
     })
 
     this._socket.on('pong', (ms) => {
-      this._emitter.emit('pong', ms)
+      this._emitter.pong(ms)
     })
 
     this._socket.on('connect', () => {
@@ -51,12 +64,8 @@ export default class AgentClient {
       this.socketError(error)
     })
 
-    this._socket.on(AUTHENTICATED, (socketMessage) => {
-      this.authenticated(socketMessage)
-    })
-
-    this._socket.on(RESULT, async (socketMessage) => {
-      await this.store(socketMessage)
+    this._socket.on(RESULT, (socketMessage) => {      
+      this.result(socketMessage)
     })
   }
 
@@ -107,36 +116,27 @@ export default class AgentClient {
 
   connected() {
     console.info(Common.now(), 'Connecté à', SOCKET_SERVER_URL)
-    this._emitter.doConnected()
+    this._isAuthenticated = true
+    this._emitter.connected()
   }
 
   socketError(error) {
     console.error(Common.now(), 'Socket error', error)
-    this._emitter.emit('socketError', error)
+    this._emitter.socketError(error)
   }
  
   connectionError(error) {
     console.info(Common.now(), 'Erreur connexion', error)
-    this._emitter.emit('connectionError', error)
-  }
-
-  authenticated(socketMessage) {
-    console.info(Common.now(), 'Bienvenue', socketMessage.nickname)
-    this._isAuthenticated = true
-    this._nickname = socketMessage.nickname
-    this._emitter.emit('authenticated', socketMessage)
+    this._emitter.connectionError(error)
   }
   
-  async store(socketMessage) {
-    return new Promise((resolve, reject) => {
-      if (!this.check(socketMessage)) reject()
-      const decompressed = LZString.decompressFromUTF16(socketMessage.message)
-      console.info(`Message ${decompressed}`)
-      //const emitter = socketMessage.From;
-      //this.emit(SocketEvent.CHAT_MESSAGE, Faker.lorem.sentence(15), emitter);
-      this._emitter.emit('store', socketMessage)
-      resolve()
-    })
+  result(socketMessage) {        
+    if (!this.check(socketMessage)) {
+      return
+    }
+    const decompressed = LZString.decompressFromUTF16(socketMessage.message)
+    console.info(`Message ${decompressed}`)      
+    this._emitter.result(decompressed, socketMessage.from)      
   }
 
 }
