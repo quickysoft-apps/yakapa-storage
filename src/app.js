@@ -16,23 +16,37 @@ agentClient.emitter.on('connected', () => {
 	console.info(Common.now(), 'Storage connecté avec le tag', agentClient.tag)
 })
 
-agentClient.emitter.on('result', (message, from) => {
+agentClient.emitter.on('result', (message, from, date) => {
 	console.info(Common.now(), 'Storing result', message, 'from', from)
-	const filename = path.join(__dirname, '..', '..', 'storage', `${from}.json`)
+	const jsonMessage = JSON.parse(message)
+	const rootPath = path.join(__dirname, '..', '..', 'storage', from);
+	if (!fs.existsSync(rootPath)) {
+		fs.mkdirSync(rootPath)
+	}
+	const filename = path.join(rootPath, `${jsonMessage.extractor}.json`)
 	lock(filename, function(unlock) {		
 		try {
-			
-			const result = JSON.parse(message)
+			const { extractor, result } = jsonMessage			
 			const newData = [
 				{				
-					timestamp: new Date().toJSON(),
-					...result
+					timestamp: date.slice(0,19)+'.000Z',
+					result
 				}
 			]
-			const incomingDataFrame = new dataForge.DataFrame(newData)			
+			const incomingDataFrame = new dataForge.DataFrame(newData)
 						
 			if (fs.existsSync(filename)) {
-				const existingData = new dataForge.readFileSync(filename).parseJSON().toArray()
+				const count = 10000
+				const days = 3				
+				const last = new Date(new Date().getTime() - (days * 24 * 60 * 60 * 1000));				
+				const existingData = new dataForge.readFileSync(filename)
+					.parseJSON()
+					.parseDates("timestamp")
+					.setIndex("timestamp")
+					.orderBy(row => row.timestamp)
+					.startAt(last)
+					.tail(count - 1)
+					.toArray()
 				const existingDataFrame = new dataForge.DataFrame(existingData)
 				const storingDataFrame = existingDataFrame.concat(incomingDataFrame)
 				storingDataFrame.asJSON().writeFileSync(filename);

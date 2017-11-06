@@ -30,8 +30,8 @@ class AgentClientEmitter extends EventEmitter {
     this.emit('pong', ms)
   }
   
-  result(message, from) {
-    this.emit('result', message, from)
+  result(message, from, date) {
+    this.emit('result', message, from, date)
   }
 }
 
@@ -136,7 +136,7 @@ export default class AgentClient {
     }
     const decompressed = LZString.decompressFromUTF16(socketMessage.message)
     console.info(`Message ${decompressed}`)      
-    this._emitter.result(decompressed, socketMessage.from)      
+    this._emitter.result(decompressed, socketMessage.from, socketMessage.date)      
   }
 
 }
