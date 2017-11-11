@@ -1,5 +1,3 @@
-import Server from './server'
-import AgentClient from './agentClient'
 import Agent from 'yakapa-agent-client'
 import Common from './common'
 
@@ -8,12 +6,10 @@ import * as fs from 'fs'
 import perfy from 'perfy'
 import { lock } from 'ki1r0y.lock'
 import dataForge from 'data-forge'
+import * as LZString from 'lz-string'
 
 const EVENT_PREFIX = 'yakapa'
 const RESULT_STORED = `${EVENT_PREFIX}/resultStored`
-
-const server = new Server(true)
-const agentClient = new AgentClient()
 
 const agent = new Agent({
 	port: 3001,
@@ -22,31 +18,35 @@ const agent = new Agent({
 	nickname: 'Storage'
 })
 
-server.listen()
-
-agentClient.emitter.on('connected', () => {
-	console.info(Common.now(), 'Storage connecté avec le tag', agentClient.tag)
+agent.client.emitter.on('connected', () => {
+	console.info(Common.now(), 'Storage connecté avec le tag', agent.client.tag)
 })
 
-agentClient.emitter.on('result', (sender, message, from, date) => {
-	console.info(Common.now(), 'Storing result', message, 'from', from)
-	const jsonMessage = JSON.parse(message)
-	const rootPath = path.join(__dirname, '..', '..', 'storage', from);	
+agent.client.emitter.on('yakapa/result', (socketMessage) => {
+
+	const message = socketMessage.message
+	const from = socketMessage.from
+	const date = socketMessage.date
+	const decompressed = LZString.decompressFromUTF16(message)
+
+	console.info(Common.now(), 'Storing result', decompressed, 'from', from)
+	const jsonMessage = JSON.parse(decompressed)
+	const rootPath = path.join(__dirname, '..', '..', 'storage', from);
 	if (!fs.existsSync(rootPath)) {
 		fs.mkdirSync(rootPath)
-	}	
+	}
 	const filename = path.join(rootPath, `${jsonMessage.extractor}.json`)
-	lock(filename, function(unlock) {		
+	lock(filename, function(unlock) {
 		try {
-			const { result } = jsonMessage			
-			const newData = [
-				{				
-					timestamp: date.slice(0,19)+'.000Z',
-					result
-				}
-			]
+			const {
+				result
+			} = jsonMessage
+			const newData = [{
+				timestamp: date.slice(0, 19) + '.000Z',
+				result
+			}]
 			const incomingDataFrame = new dataForge.DataFrame(newData)
-						
+
 			if (fs.existsSync(filename)) {
 				const count = 10000 //related to extractor
 				const days = 3 //related to extractor
@@ -66,15 +66,16 @@ agentClient.emitter.on('result', (sender, message, from, date) => {
 			} else {
 				incomingDataFrame.asJSON().writeFileSync(filename);
 			}
-			
+
 			console.info(Common.now(), 'Result storage done for', from)
-			const storedMessage = { from, extractor: jsonMessage.extractor }
-			sender.emit(RESULT_STORED, JSON.stringify(storedMessage))
-		} 
-		catch(error) {			
+			const storedMessage = {
+				from,
+				extractor: jsonMessage.extractor
+			}
+			agent.client.emit(RESULT_STORED, JSON.stringify(storedMessage))
+		} catch (error) {
 			console.warn(Common.now(), 'Result storage failed for', from, error)
-		}
-		finally {
+		} finally {
 			unlock()
 		}
 	});
