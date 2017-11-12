@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node lib/app",
-    "build": "node_modules/.bin/babel src --out-dir lib -w"
+    "build": "node_modules/.bin/babel src --out-dir lib -w",
+    "prebuild": "node_modules/.bin/babel src --out-dir lib"
   },
   "dependencies": {
     "data-forge": "^0.5.6",
@@ -18,7 +19,8 @@
     "lz-string": "^1.4.4",
     "perfy": "^1.1.2",
     "socket.io-client": "^2.0.4",
-    "yakapa-agent-client": "^1.0.3"
+    "yakapa-agent-client": "^1.0.5",
+    "yakapa-common": "^1.0.4"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

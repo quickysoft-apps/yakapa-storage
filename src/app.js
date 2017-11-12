@@ -1,5 +1,5 @@
 import Agent from 'yakapa-agent-client'
-import Common from './common'
+import * as Common from 'yakapa-common'
 
 import * as path from 'path'
 import * as fs from 'fs'
@@ -19,7 +19,7 @@ const agent = new Agent({
 })
 
 agent.client.emitter.on('connected', () => {
-	console.info(Common.now(), 'Storage connecté avec le tag', agent.client.tag)
+	Common.logger.info('Storage connecté avec le tag', agent.client.tag)
 })
 
 agent.client.emitter.on('yakapa/result', (socketMessage) => {
@@ -29,7 +29,7 @@ agent.client.emitter.on('yakapa/result', (socketMessage) => {
 	const date = socketMessage.date
 	const decompressed = LZString.decompressFromUTF16(message)
 
-	console.info(Common.now(), 'Storing result', decompressed, 'from', from)
+	Common.logger.info('Storing result from', from)
 	const jsonMessage = JSON.parse(decompressed)
 	const rootPath = path.join(__dirname, '..', '..', 'storage', from);
 	if (!fs.existsSync(rootPath)) {
@@ -51,30 +51,30 @@ agent.client.emitter.on('yakapa/result', (socketMessage) => {
 				const count = 10000 //related to extractor
 				const days = 3 //related to extractor
 				const last = new Date(new Date().getTime() - (days * 24 * 60 * 60 * 1000));
-				perfy.start('process file')
+				perfy.start('processFile')
 				const existingData = new dataForge.readFileSync(filename)
 					.parseJSON()
 					.where(x => x.timestamp > last.toJSON())
 					.tail(count - 1)
 					.toArray()
-				console.log(perfy.end('process file').summary)
+				Common.logger.info('Storage processed file in', perfy.end('processFile').time, 's')
 				const existingDataFrame = new dataForge.DataFrame(existingData)
 				const storingDataFrame = existingDataFrame.concat(incomingDataFrame)
-				perfy.start('write file')
+				perfy.start('writeFile')
 				storingDataFrame.asJSON().writeFileSync(filename);
-				console.log(perfy.end('write file').summary)
+				Common.logger.info('Storage wrote file in', perfy.end('writeFile').time, 's')
 			} else {
 				incomingDataFrame.asJSON().writeFileSync(filename);
 			}
 
-			console.info(Common.now(), 'Result storage done for', from)
+			Common.logger.info('Result storage done for', from)
 			const storedMessage = {
 				from,
 				extractor: jsonMessage.extractor
 			}
 			agent.client.emit(RESULT_STORED, JSON.stringify(storedMessage))
 		} catch (error) {
-			console.warn(Common.now(), 'Result storage failed for', from, error)
+			Common.logger.warn('Result storage failed for', from, error)
 		} finally {
 			unlock()
 		}
