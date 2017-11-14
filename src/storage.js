@@ -3,7 +3,9 @@ import * as path from 'path'
 import * as fs from 'fs'
 import perfy from 'perfy'
 import dataForge from 'data-forge'
-import { lock } from 'ki1r0y.lock'
+import {
+  lock
+} from 'ki1r0y.lock'
 
 export default class Storage {
 
@@ -18,8 +20,8 @@ export default class Storage {
     if (!fs.existsSync(rootpath)) {
       fs.mkdirSync(rootpath)
     }
-    this._fullpath = path.join(rootpath, `${extractor}.json`)    
-    this._existingData = this.read(this._fullpath, maxDays, maxCount)
+    this._fullpath = path.join(rootpath, `${extractor}.json`)
+    this._existingData = this.read(maxDays, maxCount)
   }
 
   store(onStored, onError) {
@@ -40,18 +42,18 @@ export default class Storage {
     });
   }
 
-  read() {
+  read(maxDays, maxCount) {
     if (!fs.existsSync(this._fullpath)) {
       return null
     }
-    const until = new Date(new Date().getTime() - (this._maxDays * 24 * 60 * 60 * 1000));
+    const until = new Date(new Date().getTime() - (maxDays * 24 * 60 * 60 * 1000));
     perfy.start('read')
     const data = new dataForge.readFileSync(this._fullpath)
       .parseJSON()
       .where(x => x.timestamp > until.toJSON())
-      .tail(this._maxCount - 1)
+      .tail(maxCount - 1)
       .toArray()
-    Common.logger.info('Read file in', perfy.end('read').time, 's')
+    Common.logger.info('Read file in', perfy.end('read').time, 's')    
     return new dataForge.DataFrame(data)
   }
 
@@ -61,12 +63,12 @@ export default class Storage {
 
   write() {
     let storingData
-    if (this._existingData) {      
+    if (this._existingData) {
       storingData = this._existingData.concat(this._newData)
-    } else {            
+    } else {
       storingData = this._newData
-    }    
-    perfy.start('writeFile')    
+    }
+    perfy.start('writeFile')
     storingData.asJSON().writeFileSync(this._fullpath);
     Common.logger.info(`${path.basename(this._fullpath)} written in`, perfy.end('writeFile').time, 's')
   }
