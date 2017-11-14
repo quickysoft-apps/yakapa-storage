@@ -25,7 +25,7 @@ export default class Storage {
     
     const distinct = this._lastData ? this._lastData.except(this._newData, (a, b) => { return equals(a.value, b.value) }) : this._newData    
     if (distinct.count() === 0) {
-      Common.logger.info('Pas de nouvelles valeurs')
+      Common.logger.info('No new values to store')
       return
     }
     
