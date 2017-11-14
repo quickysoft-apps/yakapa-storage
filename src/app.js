@@ -9,7 +9,8 @@ import dataForge from 'data-forge'
 import * as LZString from 'lz-string'
 
 const EVENT_PREFIX = 'yakapa'
-const RESULT_STORED = `${EVENT_PREFIX}/resultStored`
+const STORED = `${EVENT_PREFIX}/stored`
+const STORE = `${EVENT_PREFIX}/store`
 
 const agent = new Agent({
 	port: 3001,
@@ -22,7 +23,7 @@ agent.client.emitter.on('connected', () => {
 	Common.logger.info('Storage connecté avec le tag', agent.client.tag)
 })
 
-agent.client.emitter.on('yakapa/result', (socketMessage) => {
+agent.client.emitter.on(STORE, (socketMessage) => {
 
 	const message = socketMessage.message
 	const from = socketMessage.from
@@ -68,11 +69,11 @@ agent.client.emitter.on('yakapa/result', (socketMessage) => {
 			}
 
 			Common.logger.info('Result storage done for', from)
-			const storedMessage = {
+			const stored = {
 				from,
 				extractor: jsonMessage.extractor
 			}
-			agent.client.emit(RESULT_STORED, JSON.stringify(storedMessage))
+			agent.client.emit(STORED, JSON.stringify(stored))
 		} catch (error) {
 			Common.logger.warn('Result storage failed for', from, error)
 		} finally {
