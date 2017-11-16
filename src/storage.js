@@ -25,7 +25,7 @@ export default class Storage {
     
     const distinct = this._lastData ? this._lastData.except(this._newData, (a, b) => { return equals(a.value, b.value) }) : this._newData    
     if (distinct.count() === 0) {
-      Common.logger.info('No new values to store')
+      Common.Logger.info('No new values to store')
       return
     }
     
@@ -36,7 +36,7 @@ export default class Storage {
           onStored()
         }
       } catch (error) {
-        Common.logger.error(error)
+        Common.Logger.error(error)
         if (onError) {
           onError()
         }
@@ -57,7 +57,7 @@ export default class Storage {
       .where(x => x.timestamp > until.toJSON())
       .tail(maxCount - 1)
       .toArray()
-    Common.logger.info('Read file in', perfy.end('read').time, 's')    
+    Common.Logger.info('Read file in', perfy.end('read').time, 's')    
     return new dataForge.DataFrame(data)
   }
 
@@ -74,7 +74,7 @@ export default class Storage {
     }    
     perfy.start('writeFile')
     storingData.asJSON().writeFileSync(this._fullpath);
-    Common.logger.info(`${path.basename(this._fullpath)} written in`, perfy.end('writeFile').time, 's')    
+    Common.Logger.info(`${path.basename(this._fullpath)} written in`, perfy.end('writeFile').time, 's')    
   }
 
 }
