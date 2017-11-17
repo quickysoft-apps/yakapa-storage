@@ -15,19 +15,29 @@ export default class Storage {
       fs.mkdirSync(rootpath)
     }
     this._fullpath = path.join(rootpath, `${extractor}.json`)
-    
-    this._newData = new dataForge.DataFrame([{ timestamp: timestamp.slice(0, 19) + '.000Z', value }])
+    this._newData = new dataForge.DataFrame([{ 
+      timestamp: timestamp.slice(0, 19) + '.000Z',       
+      tag,
+      extractor,
+      ...value
+    }])
     this._currentData = this.read(maxDays, maxCount)
-    this._lastData = this._currentData ? this._currentData.tail(1) : null
+    this._lastData = this._currentData ? new dataForge.DataFrame([this._currentData.last()]) : null
   }
 
   store(onStored, onError) {
     
-    const distinct = this._lastData ? this._lastData.except(this._newData, (a, b) => { return equals(a.value, b.value) }) : this._newData    
-    if (distinct.count() === 0) {
+    let changed = true
+    if (this._lastData) {         
+      const a = this._lastData.dropSeries('timestamp').toArray()[0]
+      const b = this._newData.dropSeries('timestamp').toArray()[0]          
+      changed = !equals(a, b)
+    }
+    
+    if (!changed) {
       Common.Logger.info('No new values to store')
       return
-    }
+    } 
     
     lock(this._filename, (unlock) => {
       try {        
@@ -59,10 +69,6 @@ export default class Storage {
       .toArray()
     Common.Logger.info('Read file in', perfy.end('read').time, 's')    
     return new dataForge.DataFrame(data)
-  }
-
-  areValuesEqual(data1, data2) {
-    return false
   }
 
   write() {    
