@@ -29,16 +29,16 @@ client.emitter.on(STORE, (socketMessage) => {
 		
 	const { from, date, message } = socketMessage
 	const decompressed = LZString.decompressFromUTF16(message)		
-	const { extractor, value } = JSON.parse(decompressed)
+	const { job, value } = JSON.parse(decompressed)
 	
 	Common.Logger.info('Storing value from', from)
-	const storage = new Storage(from,	extractor,value, date, 3, 10000)
+	const storage = new Storage(from,	job, value, date, 3, 10000)
 	storage.store(
 		() => {
 			Common.Logger.info('Value storage done for', from)
 			const stored = {
 				from,
-				extractor
+				job
 			}
 			client.emit(STORED, JSON.stringify(stored))
 		},

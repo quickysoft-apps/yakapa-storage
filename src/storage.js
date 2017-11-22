@@ -8,17 +8,17 @@ import { lock } from 'ki1r0y.lock'
 
 export default class Storage {
 
-  constructor(tag, extractor, value, timestamp, maxDays, maxCount) {
+  constructor(tag, job, value, timestamp, maxDays, maxCount) {
 
     const rootpath = path.join(__dirname, '..', '..', 'storage', tag);
     if (!fs.existsSync(rootpath)) {
       fs.mkdirSync(rootpath)
     }
-    this._fullpath = path.join(rootpath, `${extractor}.json`)
+    this._fullpath = path.join(rootpath, `${job}.json`)
     this._newData = new dataForge.DataFrame([{ 
       timestamp: timestamp.slice(0, 19) + '.000Z',       
       tag,
-      extractor,
+      job,
       ...value
     }])
     this._currentData = this.read(maxDays, maxCount)
@@ -67,7 +67,7 @@ export default class Storage {
       .where(x => x.timestamp > until.toJSON())
       .tail(maxCount - 1)
       .toArray()
-    Common.Logger.info('Read file in', perfy.end('read').time, 's')    
+    Common.Logger.info('Read', path.basename(this._fullpath), 'in', perfy.end('read').time, 's')    
     return new dataForge.DataFrame(data)
   }
 
