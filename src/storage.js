@@ -4,7 +4,6 @@ import * as fs from 'fs'
 import perfy from 'perfy'
 import dataForge from 'data-forge'
 import equals from 'is-equal-shallow'
-import { lock } from 'ki1r0y.lock'
 
 export default class Storage {
 
@@ -15,14 +14,13 @@ export default class Storage {
       fs.mkdirSync(rootpath)
     }
     this._fullpath = path.join(rootpath, `${job}.json`)
-    this._newData = new dataForge.DataFrame([{ 
-      timestamp: timestamp.slice(0, 19) + '.000Z',       
-      tag,
-      job,
-      ...value
-    }])
+    this._newData = new dataForge.DataFrame([{  timestamp: timestamp.slice(0, 19) + '.000Z', tag, job, ...value }])
     this._currentData = this.read(maxDays, maxCount)
     this._lastData = this._currentData ? new dataForge.DataFrame([this._currentData.last()]) : null
+  }
+  
+  get fullpath() {
+    return this._fullpath
   }
 
   store(onStored, onError) {
@@ -37,23 +35,20 @@ export default class Storage {
     if (!changed) {
       Common.Logger.info('No new values to store')
       return
-    } 
+    }
     
-    lock(this._filename, (unlock) => {
-      try {        
-        this.write()
-        if (onStored) {
-          onStored()
-        }
-      } catch (error) {
-        Common.Logger.error(error)
-        if (onError) {
-          onError()
-        }
-      } finally {
-        unlock()
+    try {        
+      this.write()
+      if (onStored) {
+        onStored()
       }
-    });
+    } catch (error) {
+      Common.Logger.error(error)
+      if (onError) {
+        onError()
+      }
+    }
+    
   }
 
   read(maxDays, maxCount) {
@@ -72,14 +67,12 @@ export default class Storage {
   }
 
   write() {    
-    let storingData
+    let storingData = this._newData.asJSON()
     if (this._currentData) {
-      storingData = this._currentData.concat(this._newData)
-    } else {
-      storingData = this._newData
+      //storingData = this._currentData.concat(this._newData)
     }    
     perfy.start('writeFile')
-    storingData.asJSON().writeFileSync(this._fullpath);
+    storingData.writeFileSync(this._fullpath);
     Common.Logger.info(`${path.basename(this._fullpath)} written in`, perfy.end('writeFile').time, 's')    
   }
 
