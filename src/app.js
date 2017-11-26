@@ -29,8 +29,8 @@ client.emitter.on(STORE, (socketMessage) => {
 	const { job, value } = JSON.parse(decompressed)
 
 	Common.Logger.info('Storing value from', from)
-
-	const storage = new Storage(from, job, value, new Date(date)/*, 'threedays'*/)
+	
+	const storage = new Storage(from, job, value, new Date(date)/*, 'threedays'*/)		
 	storage.store(
 		() => {
 			Common.Logger.info('Value storage done for', from)
@@ -40,6 +40,6 @@ client.emitter.on(STORE, (socketMessage) => {
 		(error) => {
 			Common.Logger.warn('Value storage failed for', from, error)
 		}
-	)	
-
+	)		
+	
 })
