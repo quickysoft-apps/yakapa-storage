@@ -5,8 +5,6 @@ import Storage from './storage'
 import express from 'express'
 import * as path from 'path'
 import * as fs from 'fs'
-import perfy from 'perfy'
-import dataForge from 'data-forge'
 import * as LZString from 'lz-string'
 
 const EVENT_PREFIX = 'yakapa'
@@ -32,7 +30,7 @@ client.emitter.on(STORE, (socketMessage) => {
 
 	Common.Logger.info('Storing value from', from)
 
-	const storage = new Storage(from, job, value, date, 3, 10000)
+	const storage = new Storage(from, job, value, new Date(date)/*, 'threedays'*/)
 	storage.store(
 		() => {
 			Common.Logger.info('Value storage done for', from)
