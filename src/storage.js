@@ -2,15 +2,18 @@ import * as Common from 'yakapa-common'
 import * as path from 'path'
 import * as fs from 'fs'
 import perfy from 'perfy'
-import {
-  InfluxDB
-} from 'influx'
-import equals from 'is-equal-shallow'
+import { InfluxDB } from 'influx'
 
 export default class Storage {
 
   constructor(tag, job, value, timestamp, retention) {
-    this._influx = new InfluxDB('http://localhost:8086/yakapa')
+    this._influx = new InfluxDB({
+      database: 'yakapa',
+      host: 'localhost',
+      port: 8086,
+      username: 'yakapa',
+      password: 'Yakapa+123'
+    })
     this._tag = tag    
     this._job = job
     this._value = value
@@ -48,6 +51,7 @@ export default class Storage {
       
     } catch (error) {
       Common.Logger.error(error)
+      Common.Logger.info(`${this._job} storage end with error in`, perfy.end('store').time, 's')
       if (onError) {
         onError()
       }

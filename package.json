@@ -15,7 +15,6 @@
     "events": "^1.1.1",
     "express": "^4.16.2",
     "influx": "^5.0.0-alpha.4",
-    "is-equal-shallow": "^0.1.3",
     "jsonfile": "^4.0.0",
     "lz-string": "^1.4.4",
     "perfy": "^1.1.2",
